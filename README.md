@@ -32,7 +32,7 @@ Documentación adicional:
 Si ya tiene **Git** y **Docker Desktop** instalados (vea la [sección 1](#1-qué-instalar-en-el-computador)):
 
 ```bash
-git clone https://github.com/<usuario>/kadree-bank.git
+git clone https://github.com/jeyfredc/kadree-bank.git
 cd kadree-bank
 cp .env.example .env
 ```
