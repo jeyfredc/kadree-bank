@@ -1,0 +1,106 @@
+// Estilos globales: tokens y componentes del design system de Kadree Bank
+// (https://claude.ai/artifact/131xWkHybApKgVdRhkem93) más el diseño de página de la aplicación.
+@use './styles/kadree-tokens.css';
+@use './styles/kadree-components.css';
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body { margin: 0; }
+h1, h2, h3 { text-wrap: balance; }
+
+/*
+ * Controles nativos (lista de un <select>, calendario de <input type="date|month">): el navegador
+ * los dibuja con sus propios colores. color-scheme le indica el tema para que no salgan blancos
+ * sobre la interfaz oscura, y las <option> toman los colores del tema activo.
+ */
+[data-theme="marino"] { color-scheme: dark; }
+[data-theme="claro"] { color-scheme: light; }
+select.kb-input option,
+select.kb-input optgroup {
+  background-color: var(--surface);
+  color: var(--text);
+}
+select.kb-input option:disabled { color: var(--text-muted); }
+
+/* Tarjetas y accesos que son enlaces: sin el color ni el subrayado de un enlace. */
+a.kb-product { color: var(--text); text-decoration: none; }
+a.kb-btn { text-decoration: none; }
+
+/* Contenedor de página */
+.kb-page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-8) var(--space-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+.kb-page__title { margin: 0; font: 500 32px/40px var(--font-sans); }
+.kb-page__lead { margin: var(--space-1) 0 0; font: 400 14px/20px var(--font-sans); color: var(--text-muted); }
+.kb-section-title { margin: 0; font: 500 24px/32px var(--font-sans); }
+.kb-breadcrumb { display: flex; gap: var(--space-2); font: 400 14px/20px var(--font-sans); color: var(--text-muted); }
+.kb-row { display: flex; flex-wrap: wrap; gap: var(--space-6); align-items: flex-start; }
+.kb-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.kb-products { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-6); }
+.kb-summary { margin: 0; display: grid; gap: var(--space-3); font-variant-numeric: tabular-nums; }
+.kb-summary > div { display: flex; justify-content: space-between; gap: var(--space-4); }
+.kb-summary dt { color: var(--text-muted); }
+.kb-summary dd { margin: 0; text-align: right; }
+.kb-summary .is-total { padding-top: var(--space-3); border-top: 1px solid var(--line); }
+.kb-summary .is-total dt { color: var(--text); font-weight: 500; }
+.kb-summary .is-total dd { font: 500 20px/28px var(--font-sans); }
+.kb-table-wrap { overflow-x: auto; }
+.kb-table { width: 100%; border-collapse: collapse; font: 400 14px/20px var(--font-sans); font-variant-numeric: tabular-nums; }
+.kb-table th { text-align: left; padding: var(--space-3); color: var(--text-muted); font: 500 12px/16px var(--font-sans); border-top: 1px solid var(--line); }
+.kb-table td { padding: var(--space-3); border-top: 1px solid var(--line); }
+.kb-table .num { text-align: right; white-space: nowrap; }
+.kb-table .kb-nowrap { white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Paginador (kb-paginator) */
+.kb-paginator { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-6); }
+.kb-paginator__info { margin: 0; font: 400 14px/20px var(--font-sans); color: var(--text-muted); }
+.kb-paginator__info b { color: var(--text); font-weight: 500; }
+.kb-paginator__pages { display: flex; align-items: center; gap: var(--space-1); }
+.kb-paginator__page {
+  min-width: 36px; height: 36px; padding: 0 var(--space-2);
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+  background: transparent; color: var(--text); font: 500 14px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.kb-paginator__page:hover:not(:disabled) { background: var(--surface-hover); }
+.kb-paginator__page:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.kb-paginator__page.is-current { background: var(--action); border-color: var(--action); color: var(--on-action); }
+.kb-paginator__page:disabled { cursor: default; opacity: .6; }
+.kb-paginator__gap { min-width: 24px; text-align: center; color: var(--text-muted); }
+.kb-paginator__size { display: flex; align-items: center; gap: var(--space-2); font: 400 14px/20px var(--font-sans); color: var(--text-muted); }
+.kb-paginator__size .kb-input {
+  width: auto; height: 36px; padding: 0 var(--space-2);
+  border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--text);
+}
+
+/* Tabla agrupada: un bloque (tbody) por cliente; las celdas comunes ocupan todas sus filas. */
+.kb-table--grouped th[scope="rowgroup"] { text-align: left; font: inherit; color: inherit; }
+.kb-table--grouped .kb-table__cell-group { vertical-align: top; }
+.kb-table--grouped .kb-table__group + .kb-table__group td,
+.kb-table--grouped .kb-table__group + .kb-table__group th { border-top: 2px solid var(--line-strong, var(--line)); }
+.kb-table--grouped .kb-table__group tr + tr td { border-top-style: dashed; }
+.kb-table--grouped .kb-badge { white-space: nowrap; }
+
+/* Pantallas de acceso */
+.kb-auth-page { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text); }
+.kb-auth-page__top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-6) var(--space-12); flex-wrap: wrap; }
+.kb-auth-page__main { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: var(--space-4) var(--space-4) var(--space-16); }
+
+/* Navegación en móvil */
+.kb-header__menu { display: none; }
+@media (max-width: 767px) {
+  .kb-page { padding: var(--space-6) var(--space-4) var(--space-12); }
+  .kb-header { padding: var(--space-2) var(--space-4); gap: var(--space-2); }
+  .kb-header__menu { display: inline-flex; }
+  .kb-header__name { display: none; }
+  .kb-nav { display: none; width: 100%; order: 10; flex-direction: column; }
+  .kb-nav.is-open { display: flex; }
+  .kb-nav__link { padding: var(--space-3) var(--space-2); border-bottom: 0; }
+  .kb-grid-2 { grid-template-columns: 1fr; }
+  .kb-auth-page__top { padding: var(--space-4); }
+  .kb-auth { padding: var(--space-6); box-shadow: none; }
+}

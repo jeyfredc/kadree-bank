@@ -1,0 +1,74 @@
+<div class="kb-auth-page">
+  <header class="kb-auth-page__top">
+    <span class="kb-wordmark" style="font-size: 24px;"><b>Kadree</b> Bank</span>
+    <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-muted);">
+      <span class="kb-icon" aria-hidden="true" style="color: var(--accent);">verified_user</span>Sitio seguro
+    </span>
+  </header>
+
+  <main class="kb-auth-page__main">
+    <section class="kb-auth" aria-labelledby="login-title">
+      <div class="kb-auth__head">
+        <h1 class="kb-auth__title" id="login-title">Ingresa a tu banca</h1>
+        <p class="kb-auth__lead">Usa tu usuario o tu número de documento y tu contraseña de 4 dígitos.</p>
+      </div>
+
+      @if (sessionEnded && !error() && !locked()) {
+        <kb-alert type="info" heading="Tu sesión terminó" message="Por seguridad cerramos la sesión. Ingresa de nuevo para continuar." />
+      }
+      @if (error()) {
+        <kb-alert type="error" heading="No pudimos validar tus datos" [message]="error()" />
+      }
+      @if (locked()) {
+        <kb-alert type="warning" heading="Bloqueamos el acceso por seguridad" [message]="locked()" />
+      }
+
+      <form class="kb-auth__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="kb-field">
+          <label class="kb-field__label" for="login-identifier">Usuario o número de documento</label>
+          <div class="kb-input-box" [class.is-error]="form.controls.identifier.touched && form.controls.identifier.invalid">
+            <span class="kb-icon" aria-hidden="true">person</span>
+            <input class="kb-input" id="login-identifier" formControlName="identifier" autocomplete="username"
+                   placeholder="ana.gomez o 1012345678" aria-describedby="login-identifier-help" />
+            @if (identifierKind()) {
+              <span class="kb-field__chip">{{ identifierKind() }}</span>
+            }
+          </div>
+          @if (form.controls.identifier.touched && form.controls.identifier.invalid) {
+            <p class="kb-field__msg kb-field__msg--error" style="margin: 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>Escribe tu usuario o tu número de documento.</p>
+          } @else {
+            <p class="kb-field__help" id="login-identifier-help" style="margin: 0;">Puedes usar tu usuario o tu documento, sin puntos.</p>
+          }
+        </div>
+
+        <div class="kb-field">
+          <label class="kb-field__label" for="login-pin">Contraseña de 4 dígitos</label>
+          <kb-pin-field inputId="login-pin" formControlName="pin" autocomplete="current-password"
+                        [error]="!!error() || (form.controls.pin.touched && form.controls.pin.invalid)" />
+          @if (form.controls.pin.touched && form.controls.pin.invalid) {
+            <p class="kb-field__msg kb-field__msg--error" style="margin: 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>La contraseña tiene exactamente 4 dígitos.</p>
+          }
+        </div>
+
+        <div class="kb-auth__row">
+          <label class="kb-check" [class.is-checked]="form.controls.remember.value">
+            <input type="checkbox" class="kb-sr" formControlName="remember" />
+            <span class="kb-check__box" aria-hidden="true">@if (form.controls.remember.value) { <span class="kb-icon">check</span> }</span>
+            Recordar mi usuario
+          </label>
+        </div>
+
+        <button class="kb-btn kb-btn--primary kb-btn--block" type="submit" [disabled]="busy()" [class.is-loading]="busy()" [attr.aria-busy]="busy()">
+          @if (busy()) { <span class="kb-icon" aria-hidden="true">progress_activity</span> Ingresando… } @else { Ingresar }
+        </button>
+      </form>
+
+      <div class="kb-auth__divider">¿Eres nuevo en Kadree Bank?</div>
+      <a class="kb-btn kb-btn--secondary kb-btn--block" routerLink="/acceso/registro">Crear cuenta</a>
+      <p class="kb-auth__security" style="margin: 0;">
+        <span class="kb-icon kb-icon--fill" aria-hidden="true">verified_user</span>
+        Tu conexión está cifrada. Kadree Bank nunca te pedirá tu contraseña por teléfono ni por correo.
+      </p>
+    </section>
+  </main>
+</div>

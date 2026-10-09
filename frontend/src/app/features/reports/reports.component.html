@@ -1,0 +1,223 @@
+<main class="kb-page">
+  <div>
+    <h1 class="kb-page__title">Administración</h1>
+    <p class="kb-page__lead">Consultas de todos los clientes del banco. Las fechas están en hora de Colombia.</p>
+  </div>
+
+  @if (exportError()) {
+    <kb-alert type="error" heading="Descarga fallida" [message]="exportError()" />
+  }
+
+  <!-- Transacciones por sede -->
+  <section class="kb-card" style="display: grid; gap: var(--space-6);" aria-labelledby="br-title">
+    <div>
+      <h2 class="kb-card__title" id="br-title">Transacciones por sede</h2>
+      <p class="kb-card__meta">Clientes con su número de transacciones en el mes, por sede (ciudad donde se hicieron), de mayor a menor.</p>
+    </div>
+    <form class="kb-row" style="align-items: flex-end;" [formGroup]="branchForm" (ngSubmit)="loadBranch()" novalidate>
+      <div class="kb-field" style="flex: 1 1 180px;">
+        <label class="kb-field__label" for="br-month">Mes</label>
+        <div class="kb-input-box"><input class="kb-input" id="br-month" type="month" formControlName="month" [max]="maxMonth" /></div>
+      </div>
+      <div class="kb-field" style="flex: 1 1 180px;">
+        <label class="kb-field__label" for="br-city">Sede</label>
+        <div class="kb-input-box">
+          <select class="kb-input" id="br-city" formControlName="cityId">
+            <option [ngValue]="null">Todas las sedes</option>
+            @for (c of cities(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+          </select>
+          <span class="kb-icon" aria-hidden="true">expand_more</span>
+        </div>
+      </div>
+      <div class="kb-field" style="flex: 1 1 200px;">
+        <label class="kb-field__label" for="br-type">Tipo de movimiento</label>
+        <div class="kb-input-box">
+          <select class="kb-input" id="br-type" formControlName="type">
+            <option [ngValue]="null">Consignaciones y retiros</option>
+            <option ngValue="Consignacion">Solo consignaciones</option>
+            <option ngValue="Retiro">Solo retiros</option>
+          </select>
+          <span class="kb-icon" aria-hidden="true">expand_more</span>
+        </div>
+      </div>
+      <button class="kb-btn kb-btn--primary" type="submit" [disabled]="branchBusy()" [class.is-loading]="branchBusy()">Consultar</button>
+      <button class="kb-btn kb-btn--tertiary" type="button" (click)="clearBranch()" [disabled]="branchBusy()">
+        <span class="kb-icon" aria-hidden="true">filter_alt_off</span>Limpiar
+      </button>
+    </form>
+
+    @if (branchError()) {
+      <kb-alert type="error" heading="No pudimos generar el reporte" [message]="branchError()" />
+    }
+    @if (branch(); as result) {
+      <div class="kb-row" style="justify-content: space-between; align-items: center;">
+        <p class="kb-card__meta" style="margin: 0;" aria-live="polite">
+          {{ branchFilters() }} · {{ result.totalItems }} {{ result.totalItems === 1 ? 'cliente' : 'clientes' }} · {{ result.totalTransactions }} transacciones
+        </p>
+        <div class="kb-row" style="gap: var(--space-2);">
+          <button class="kb-btn kb-btn--secondary kb-btn--md" type="button" (click)="exportBranch('excel')" title="Descarga todas las páginas"
+                  [disabled]="!result.totalItems || exporting()" [class.is-loading]="exporting() === 'branch-excel'">
+            <span class="kb-icon" aria-hidden="true">download</span>Excel
+          </button>
+          <button class="kb-btn kb-btn--secondary kb-btn--md" type="button" (click)="exportBranch('pdf')" title="Descarga todas las páginas"
+                  [disabled]="!result.totalItems || exporting()" [class.is-loading]="exporting() === 'branch-pdf'">
+            <span class="kb-icon" aria-hidden="true">download</span>PDF
+          </button>
+        </div>
+      </div>
+      <div class="kb-table-wrap" [attr.aria-busy]="branchBusy()" [style.opacity]="branchBusy() ? 0.6 : 1">
+        <table class="kb-table kb-table--grouped">
+          <caption class="kb-sr">Transacciones por sede: {{ branchFilters() }}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Sede</th><th scope="col">Cliente</th><th scope="col">Documento</th>
+              <th scope="col" class="num">Total del cliente</th>
+              <th scope="col">Fecha y hora</th><th scope="col">Motivo</th><th scope="col" class="num">Monto</th>
+              <th scope="col">Cuenta</th><th scope="col">Descripción</th>
+            </tr>
+          </thead>
+          @for (g of branchGroups(); track g.key) {
+            <tbody class="kb-table__group">
+              @for (r of g.rows; track r.movementId; let first = $first) {
+                <tr>
+                  @if (first) {
+                    <th scope="rowgroup" [attr.rowspan]="g.rows.length" class="kb-table__cell-group">{{ r.city }}</th>
+                    <td [attr.rowspan]="g.rows.length" class="kb-table__cell-group"><b>{{ r.fullName }}</b></td>
+                    <td [attr.rowspan]="g.rows.length" class="kb-table__cell-group">{{ r.documentNumber }}</td>
+                    <td [attr.rowspan]="g.rows.length" class="kb-table__cell-group num"><b>{{ r.customerTransactionCount }}</b></td>
+                  }
+                  <td class="kb-nowrap">{{ r.createdAtUtc | bankDate: 'datetime' }}</td>
+                  <td>
+                    <span class="kb-badge" [class.kb-badge--success]="r.type === 'Consignacion'" [class.kb-badge--warning]="r.type === 'Retiro'">
+                      <span class="kb-icon" aria-hidden="true">{{ r.type === 'Consignacion' ? 'south_west' : 'north_east' }}</span>{{ motiveLabel[r.type] }}
+                    </span>
+                  </td>
+                  <td class="num">{{ r.amount | cop: (r.type === 'Consignacion' ? 'signed-in' : 'signed-out') }}</td>
+                  <td class="kb-nowrap">{{ r.accountNumber }}</td>
+                  <td>{{ r.description || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          } @empty {
+            <tbody><tr><td colspan="9"><div class="kb-empty">No hubo transacciones con esos filtros.</div></td></tr></tbody>
+          }
+        </table>
+      </div>
+      <kb-paginator [page]="result.page" [pageSize]="result.pageSize" [totalItems]="result.totalItems" [totalPages]="result.totalPages"
+                    itemLabel="clientes" [sizes]="[5, 10, 20, 50]" [disabled]="branchBusy()"
+                    (pageChange)="goBranchPage($event)" (pageSizeChange)="changeBranchPageSize($event)" />
+    }
+  </section>
+
+  <!-- Reporte 1 -->
+  <section class="kb-card" style="display: grid; gap: var(--space-6);" aria-labelledby="r1-title">
+    <div>
+      <h2 class="kb-card__title" id="r1-title">Transacciones por cliente</h2>
+      <p class="kb-card__meta">Consignaciones y retiros de cada cliente en el mes (todas las sedes), de mayor a menor.</p>
+    </div>
+    <form class="kb-row" style="align-items: flex-end;" [formGroup]="monthForm" (ngSubmit)="loadReport1()" novalidate>
+      <div class="kb-field" style="flex: 0 1 220px;">
+        <label class="kb-field__label" for="r1-month">Mes</label>
+        <div class="kb-input-box"><input class="kb-input" id="r1-month" type="month" formControlName="month" [max]="maxMonth" /></div>
+      </div>
+      <button class="kb-btn kb-btn--primary" type="submit" [disabled]="report1Busy()" [class.is-loading]="report1Busy()">Consultar</button>
+      <button class="kb-btn kb-btn--tertiary" type="button" (click)="clearReport1()" [disabled]="report1Busy()">
+        <span class="kb-icon" aria-hidden="true">filter_alt_off</span>Limpiar
+      </button>
+      @if (report1()?.totalItems) {
+        <button class="kb-btn kb-btn--secondary kb-btn--md" type="button" (click)="exportReport1('excel')" [disabled]="exporting()" title="Descarga todas las páginas">
+          <span class="kb-icon" aria-hidden="true">download</span>Excel
+        </button>
+        <button class="kb-btn kb-btn--secondary kb-btn--md" type="button" (click)="exportReport1('pdf')" [disabled]="exporting()" title="Descarga todas las páginas">
+          <span class="kb-icon" aria-hidden="true">download</span>PDF
+        </button>
+      }
+    </form>
+
+    @if (report1Error()) {
+      <kb-alert type="error" heading="No pudimos generar el reporte" [message]="report1Error()" />
+    }
+    @if (report1(); as result) {
+      <div class="kb-table-wrap" [attr.aria-busy]="report1Busy()" [style.opacity]="report1Busy() ? 0.6 : 1">
+        <table class="kb-table">
+          <caption class="kb-sr">Transacciones por cliente en el mes elegido</caption>
+          <thead><tr><th scope="col">Cliente</th><th scope="col">Documento</th><th scope="col" class="num">Transacciones</th><th scope="col">Primera transacción</th><th scope="col">Última transacción</th></tr></thead>
+          <tbody>
+            @for (r of result.items; track r.customerId) {
+              <tr>
+                <td>{{ r.fullName }}</td><td>{{ r.documentNumber }}</td><td class="num">{{ r.transactionCount }}</td>
+                <td class="kb-nowrap">{{ bogotaDate(r.firstTransactionAtUtc) }}</td>
+                <td class="kb-nowrap">{{ bogotaDate(r.lastTransactionAtUtc) }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5"><div class="kb-empty">No hubo transacciones en ese mes.</div></td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <kb-paginator [page]="result.page" [pageSize]="result.pageSize" [totalItems]="result.totalItems" [totalPages]="result.totalPages"
+                    itemLabel="clientes" [disabled]="report1Busy()"
+                    (pageChange)="goReport1Page($event)" (pageSizeChange)="changeReport1PageSize($event)" />
+    }
+  </section>
+
+  <!-- Reporte 2 -->
+  <section class="kb-card" style="display: grid; gap: var(--space-6);" aria-labelledby="r2-title">
+    <div>
+      <h2 class="kb-card__title" id="r2-title">Retiros fuera de la ciudad de origen</h2>
+      <p class="kb-card__meta">Clientes cuyo total retirado fuera de la ciudad de origen de la cuenta supera el umbral.</p>
+    </div>
+    <form class="kb-row" style="align-items: flex-end;" [formGroup]="withdrawalsForm" (ngSubmit)="loadReport2()" novalidate>
+      <div class="kb-field" style="flex: 1 1 200px;">
+        <label class="kb-field__label" for="r2-min">Umbral (pesos)</label>
+        <div class="kb-input-box"><span aria-hidden="true">$</span><input class="kb-input" id="r2-min" formControlName="minTotal" inputmode="decimal" /></div>
+      </div>
+      <div class="kb-field" style="flex: 1 1 160px;">
+        <label class="kb-field__label" for="r2-from">Desde <span style="color: var(--text-muted); font-weight: 400;">(opcional)</span></label>
+        <div class="kb-input-box"><input class="kb-input" id="r2-from" type="date" formControlName="from" /></div>
+      </div>
+      <div class="kb-field" style="flex: 1 1 160px;">
+        <label class="kb-field__label" for="r2-to">Hasta <span style="color: var(--text-muted); font-weight: 400;">(opcional)</span></label>
+        <div class="kb-input-box"><input class="kb-input" id="r2-to" type="date" formControlName="to" /></div>
+      </div>
+      <button class="kb-btn kb-btn--primary" type="submit" [disabled]="report2Busy()" [class.is-loading]="report2Busy()">Consultar</button>
+      <button class="kb-btn kb-btn--tertiary" type="button" (click)="clearReport2()" [disabled]="report2Busy()">
+        <span class="kb-icon" aria-hidden="true">filter_alt_off</span>Limpiar
+      </button>
+      @if (report2()?.totalItems) {
+        <button class="kb-btn kb-btn--secondary kb-btn--md" type="button" (click)="exportReport2('excel')" [disabled]="exporting()" title="Descarga todas las páginas">
+          <span class="kb-icon" aria-hidden="true">download</span>Excel
+        </button>
+        <button class="kb-btn kb-btn--secondary kb-btn--md" type="button" (click)="exportReport2('pdf')" [disabled]="exporting()" title="Descarga todas las páginas">
+          <span class="kb-icon" aria-hidden="true">download</span>PDF
+        </button>
+      }
+    </form>
+
+    @if (report2Error()) {
+      <kb-alert type="error" heading="No pudimos generar el reporte" [message]="report2Error()" />
+    }
+    @if (report2(); as result) {
+      <div class="kb-table-wrap" [attr.aria-busy]="report2Busy()" [style.opacity]="report2Busy() ? 0.6 : 1">
+        <table class="kb-table">
+          <caption class="kb-sr">Clientes con retiros fuera de su ciudad que superan {{ report2Threshold() | cop }}</caption>
+          <thead><tr><th scope="col">Cliente</th><th scope="col">Documento</th><th scope="col" class="num">Retiros</th><th scope="col" class="num">Total retirado</th><th scope="col">Primer retiro</th><th scope="col">Último retiro</th></tr></thead>
+          <tbody>
+            @for (r of result.items; track r.customerId) {
+              <tr>
+                <td>{{ r.fullName }}</td><td>{{ r.documentNumber }}</td><td class="num">{{ r.withdrawalCount }}</td><td class="num">{{ r.totalWithdrawn | cop }}</td>
+                <td class="kb-nowrap">{{ bogotaDate(r.firstTransactionAtUtc) }}</td>
+                <td class="kb-nowrap">{{ bogotaDate(r.lastTransactionAtUtc) }}</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6"><div class="kb-empty">Ningún cliente supera {{ report2Threshold() | cop }} en retiros fuera de su ciudad.</div></td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <kb-paginator [page]="result.page" [pageSize]="result.pageSize" [totalItems]="result.totalItems" [totalPages]="result.totalPages"
+                    itemLabel="clientes" [disabled]="report2Busy()"
+                    (pageChange)="goReport2Page($event)" (pageSizeChange)="changeReport2PageSize($event)" />
+    }
+  </section>
+</main>

@@ -1,0 +1,220 @@
+<div class="kb-auth-page">
+  <header class="kb-auth-page__top">
+    <a class="kb-wordmark" routerLink="/acceso/ingresar" style="font-size: 24px;"><b>Kadree</b> Bank</a>
+    <span style="font-size: 14px; color: var(--text-muted);">¿Ya tienes cuenta? <a class="kb-link" routerLink="/acceso/ingresar">Ingresa</a></span>
+  </header>
+
+  <main class="kb-auth-page__main">
+    <section class="kb-auth" aria-labelledby="reg-title" style="max-width: 520px;">
+      <ol class="kb-steps" aria-label="Pasos del registro">
+        <li class="kb-steps__item" [class.is-done]="step() > 1" [class.is-current]="step() === 1" [attr.aria-current]="step() === 1 ? 'step' : null">1. Tus datos</li>
+        <li class="kb-steps__item" [class.is-done]="step() > 2" [class.is-current]="step() === 2" [attr.aria-current]="step() === 2 ? 'step' : null">2. Tu acceso</li>
+        <li class="kb-steps__item" [class.is-current]="step() === 3" [attr.aria-current]="step() === 3 ? 'step' : null">3. Confirmación</li>
+      </ol>
+
+      @if (generalError()) {
+        <kb-alert type="error" heading="No pudimos crear la cuenta" [message]="generalError()" />
+      }
+
+      @switch (step()) {
+        @case (1) {
+          <div class="kb-auth__head">
+            <h1 class="kb-auth__title" id="reg-title">Crea tu cuenta</h1>
+            <p class="kb-auth__lead">Te tomará unos 3 minutos. Ten a mano tu documento.</p>
+          </div>
+          <form class="kb-auth__form" [formGroup]="datos" (ngSubmit)="next()" novalidate>
+            <div class="kb-field">
+              <span class="kb-field__label" id="reg-type">Tipo de cliente</span>
+              <div class="kb-segmented" role="radiogroup" aria-labelledby="reg-type">
+                <button class="kb-segmented__opt" type="button" role="radio" [class.is-selected]="!isEmpresa()" [attr.aria-checked]="!isEmpresa()" (click)="selectType('Natural')">
+                  <span class="kb-icon" aria-hidden="true">person</span>Persona natural
+                </button>
+                <button class="kb-segmented__opt" type="button" role="radio" [class.is-selected]="isEmpresa()" [attr.aria-checked]="isEmpresa()" (click)="selectType('Juridica')">
+                  <span class="kb-icon" aria-hidden="true">work</span>Empresa
+                </button>
+              </div>
+              <kb-alert type="info" [message]="isEmpresa() ? 'Abriremos una cuenta corriente a nombre de la empresa.' : 'Abriremos una cuenta de ahorros a tu nombre.'" />
+            </div>
+
+            <div class="kb-grid-2">
+              <div class="kb-field">
+                <label class="kb-field__label" for="reg-doctype">Tipo de documento</label>
+                <div class="kb-input-box">
+                  <select class="kb-input" id="reg-doctype" formControlName="documentType">
+                    @for (t of documentTypes(); track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+                  </select>
+                  <span class="kb-icon" aria-hidden="true">expand_more</span>
+                </div>
+              </div>
+              <div class="kb-field">
+                <label class="kb-field__label" for="reg-doc">Número de documento</label>
+                <div class="kb-input-box" [class.is-error]="fieldError('documentNumber') || fieldError('documentType')">
+                  <input class="kb-input" id="reg-doc" formControlName="documentNumber" [attr.inputmode]="isEmpresa() ? 'text' : 'numeric'"
+                         [placeholder]="isEmpresa() ? '900123456-1' : '1012345678'" (input)="clearServerError('documentNumber')" />
+                </div>
+              </div>
+            </div>
+            @if (fieldError('documentNumber') || fieldError('documentType'); as msg) {
+              <p class="kb-field__msg kb-field__msg--error" style="margin: -8px 0 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>{{ msg }}</p>
+            }
+
+            <div class="kb-field">
+              <label class="kb-field__label" for="reg-name">{{ isEmpresa() ? 'Razón social' : 'Nombre completo' }}</label>
+              <div class="kb-input-box" [class.is-error]="fieldError('fullName')">
+                <input class="kb-input" id="reg-name" formControlName="fullName" autocomplete="name" />
+              </div>
+              @if (fieldError('fullName'); as msg) {
+                <p class="kb-field__msg kb-field__msg--error" style="margin: 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>{{ msg }}</p>
+              }
+            </div>
+
+            <div class="kb-grid-2">
+              <div class="kb-field">
+                <label class="kb-field__label" for="reg-email">Correo electrónico</label>
+                <div class="kb-input-box" [class.is-error]="fieldError('email')">
+                  <input class="kb-input" id="reg-email" type="email" formControlName="email" autocomplete="email" placeholder="nombre@correo.com" />
+                </div>
+                @if (fieldError('email'); as msg) {
+                  <p class="kb-field__msg kb-field__msg--error" style="margin: 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>{{ msg }}</p>
+                }
+              </div>
+              <div class="kb-field">
+                <label class="kb-field__label" for="reg-phone">Celular</label>
+                <div class="kb-input-box" [class.is-error]="fieldError('phone')">
+                  <input class="kb-input" id="reg-phone" type="tel" inputmode="numeric" formControlName="phone" autocomplete="tel" placeholder="3001234567" />
+                </div>
+                @if (fieldError('phone'); as msg) {
+                  <p class="kb-field__msg kb-field__msg--error" style="margin: 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>{{ msg }}</p>
+                }
+              </div>
+            </div>
+
+            <div class="kb-field">
+              <label class="kb-field__label" for="reg-city">Ciudad</label>
+              <div class="kb-input-box" [class.is-error]="fieldError('cityId')">
+                <select class="kb-input" id="reg-city" formControlName="cityId">
+                  <option [ngValue]="null" disabled>Selecciona…</option>
+                  @for (c of cities(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+                </select>
+                <span class="kb-icon" aria-hidden="true">expand_more</span>
+              </div>
+              @if (fieldError('cityId'); as msg) {
+                <p class="kb-field__msg kb-field__msg--error" style="margin: 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>{{ msg }}</p>
+              } @else {
+                <p class="kb-field__help" style="margin: 0;">Será la ciudad de origen de tu cuenta y no podrás cambiarla después.</p>
+              }
+            </div>
+
+            <div class="kb-auth__actions">
+              <button class="kb-btn kb-btn--tertiary" type="button" (click)="back()">Volver</button>
+              <button class="kb-btn kb-btn--primary" type="submit">Continuar<span class="kb-icon" aria-hidden="true">chevron_right</span></button>
+            </div>
+          </form>
+        }
+
+        @case (2) {
+          <div class="kb-auth__head">
+            <h1 class="kb-auth__title" id="reg-title">Crea tu acceso</h1>
+            <p class="kb-auth__lead">Ingresarás con tu usuario o tu documento, y esta contraseña de 4 dígitos.</p>
+          </div>
+          <form class="kb-auth__form" [formGroup]="acceso" (ngSubmit)="next()" novalidate>
+            <div class="kb-field">
+              <label class="kb-field__label" for="reg-user">Nombre de usuario</label>
+              <div class="kb-input-box" [class.is-error]="fieldError('username') || usernameStatus()?.available === false" [class.is-valid]="usernameStatus()?.available">
+                <span class="kb-icon" aria-hidden="true">person</span>
+                <input class="kb-input" id="reg-user" formControlName="username" autocomplete="username" (blur)="checkUsername()" />
+              </div>
+              @if (fieldError('username'); as msg) {
+                <p class="kb-field__msg kb-field__msg--error" style="margin: 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>{{ msg }}</p>
+              } @else if (usernameStatus(); as status) {
+                <p class="kb-field__msg" [class.kb-field__msg--valid]="status.available" [class.kb-field__msg--error]="!status.available" style="margin: 0;">
+                  <span class="kb-icon kb-icon--fill" aria-hidden="true">{{ status.available ? 'check_circle' : 'error' }}</span>{{ status.message }}
+                </p>
+              } @else {
+                <p class="kb-field__help" style="margin: 0;">De 6 a 20 caracteres: letras minúsculas, números y punto.</p>
+              }
+            </div>
+
+            <div class="kb-field">
+              <label class="kb-field__label" for="reg-pin">Contraseña de 4 dígitos</label>
+              <kb-pin-field inputId="reg-pin" formControlName="pin" autocomplete="new-password" describedBy="reg-pin-rules"
+                            [error]="!!fieldError('pin') && triedStep2()" (input)="clearServerError('pin')" />
+              <ul class="kb-rules" id="reg-pin-rules" aria-label="Requisitos de la contraseña">
+                @for (rule of pinRules(); track rule.label) {
+                  <li [class.is-ok]="rule.ok" [class.is-bad]="!rule.ok && triedStep2()">
+                    <span class="kb-icon kb-icon--fill" aria-hidden="true">{{ rule.ok ? 'check_circle' : (triedStep2() ? 'cancel' : 'info') }}</span>{{ rule.label }}
+                  </li>
+                }
+              </ul>
+              @if (serverErrors()['pin']; as msgs) {
+                @for (m of msgs; track m) {
+                  <p class="kb-field__msg kb-field__msg--error" style="margin: 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>{{ m }}</p>
+                }
+              }
+            </div>
+
+            <div class="kb-field">
+              <label class="kb-field__label" for="reg-pin2">Confirma tu contraseña</label>
+              <kb-pin-field inputId="reg-pin2" formControlName="pinConfirmation" autocomplete="new-password"
+                            [error]="triedStep2() && !pinsMatch()" />
+              @if (triedStep2() && !pinsMatch()) {
+                <p class="kb-field__msg kb-field__msg--error" style="margin: 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>Las contraseñas no coinciden.</p>
+              }
+            </div>
+
+            <label class="kb-check" [class.is-checked]="acceso.controls.acceptTerms.value" [class.is-error]="triedStep2() && !acceso.controls.acceptTerms.value">
+              <input type="checkbox" class="kb-sr" formControlName="acceptTerms" aria-labelledby="reg-terms" />
+              <span class="kb-check__box" aria-hidden="true">@if (acceso.controls.acceptTerms.value) { <span class="kb-icon">check</span> }</span>
+              <span id="reg-terms">Acepto los términos y condiciones y autorizo el tratamiento de mis datos personales.</span>
+            </label>
+
+            <div class="kb-auth__actions">
+              <button class="kb-btn kb-btn--tertiary" type="button" (click)="back()">Volver</button>
+              <button class="kb-btn kb-btn--primary" type="submit">Continuar<span class="kb-icon" aria-hidden="true">chevron_right</span></button>
+            </div>
+            @if (triedStep2() && !step2Ready()) {
+              <p class="kb-field__help" style="margin: 0; text-align: right;">Para continuar: cumple las reglas de la contraseña, confírmala y acepta los términos.</p>
+            }
+          </form>
+        }
+
+        @case (3) {
+          <div class="kb-auth__head">
+            <h1 class="kb-auth__title" id="reg-title">Revisa tus datos</h1>
+            <p class="kb-auth__lead">Si algo no está bien, puedes editarlo antes de crear la cuenta.</p>
+          </div>
+          <div class="kb-card" style="padding: 0; box-shadow: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--line);">
+              <h2 style="margin: 0; font-size: 16px; font-weight: 500;">Tus datos</h2>
+              <button class="kb-btn kb-btn--tertiary kb-btn--sm" type="button" (click)="goTo(1)">Editar</button>
+            </div>
+            <dl class="kb-summary" style="padding: 16px 24px;">
+              <div><dt>Tipo de cliente</dt><dd>{{ isEmpresa() ? 'Empresa' : 'Persona natural' }}</dd></div>
+              <div><dt>Documento</dt><dd>{{ datos.controls.documentType.value }} {{ datos.controls.documentNumber.value }}</dd></div>
+              <div><dt>{{ isEmpresa() ? 'Razón social' : 'Nombre' }}</dt><dd>{{ datos.controls.fullName.value }}</dd></div>
+              <div><dt>Correo</dt><dd>{{ datos.controls.email.value }}</dd></div>
+              <div><dt>Celular</dt><dd>{{ datos.controls.phone.value }}</dd></div>
+              <div><dt>Ciudad de origen</dt><dd>{{ cityName() }}</dd></div>
+            </dl>
+          </div>
+          <div class="kb-card" style="padding: 0; box-shadow: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--line);">
+              <h2 style="margin: 0; font-size: 16px; font-weight: 500;">Tu acceso</h2>
+              <button class="kb-btn kb-btn--tertiary kb-btn--sm" type="button" (click)="goTo(2)">Editar</button>
+            </div>
+            <dl class="kb-summary" style="padding: 16px 24px;">
+              <div><dt>Usuario</dt><dd>{{ acceso.controls.username.value }}</dd></div>
+              <div><dt>Contraseña</dt><dd style="letter-spacing: 4px;">••••</dd></div>
+            </dl>
+          </div>
+          <div class="kb-auth__actions">
+            <button class="kb-btn kb-btn--tertiary" type="button" (click)="back()">Volver</button>
+            <button class="kb-btn kb-btn--primary" type="button" (click)="submit()" [disabled]="busy()" [class.is-loading]="busy()">
+              @if (busy()) { <span class="kb-icon" aria-hidden="true">progress_activity</span> Creando… } @else { Crear cuenta }
+            </button>
+          </div>
+        }
+      }
+    </section>
+  </main>
+</div>

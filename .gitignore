@@ -1,0 +1,12 @@
+.env
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.angular/
+.vs/
+*.user
+TestResults/
+# Notas locales de herramientas de IA (no forman parte del proyecto)
+CLAUDE.md
+.claude/

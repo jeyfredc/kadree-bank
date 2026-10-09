@@ -1,0 +1,104 @@
+<main class="kb-page" style="max-width: 640px;">
+  <nav class="kb-breadcrumb" aria-label="Ruta">
+    <a class="kb-link kb-link--muted" routerLink="/banca/inicio">Inicio</a>
+    <span aria-hidden="true">›</span>
+    <span aria-current="page">{{ verb }}</span>
+  </nav>
+
+  <div>
+    <h1 class="kb-page__title">{{ confirming() ? 'Confirma la operación' : verb + ' dinero' }}</h1>
+    <p class="kb-page__lead">
+      @if (confirming()) { Revisa los datos antes de confirmar. } @else if (isDeposit) { El dinero se abona de inmediato a la cuenta. } @else { El retiro se descuenta de inmediato del saldo disponible. }
+    </p>
+  </div>
+
+  @if (loadError()) {
+    <kb-alert type="error" heading="No pudimos cargar tus cuentas" [message]="loadError()" />
+  }
+  @if (error()) {
+    <kb-alert type="error" [heading]="'No pudimos ' + (isDeposit ? 'consignar' : 'retirar')" [message]="error()" />
+  }
+
+  @if (!confirming()) {
+    <form class="kb-card" style="display: grid; gap: var(--space-6);" [formGroup]="form" (ngSubmit)="review()" novalidate>
+      <div class="kb-field">
+        <label class="kb-field__label" for="op-account">Cuenta</label>
+        <div class="kb-input-box">
+          <select class="kb-input" id="op-account" formControlName="accountNumber">
+            @for (a of accounts(); track a.number) {
+              <option [value]="a.number">{{ a.type }} {{ a.number }}</option>
+            }
+          </select>
+          <span class="kb-icon" aria-hidden="true">expand_more</span>
+        </div>
+        @if (selected(); as s) {
+          <p class="kb-field__help" style="margin: 0;">Saldo disponible: <b>{{ s.balance | cop }}</b></p>
+        }
+      </div>
+
+      <div class="kb-field">
+        <label class="kb-field__label" for="op-amount">Monto</label>
+        <div class="kb-input-box" [class.is-error]="amountError()">
+          <span aria-hidden="true">$</span>
+          <input class="kb-input" id="op-amount" formControlName="amount" inputmode="decimal" autocomplete="off" placeholder="50.000"
+                 [attr.aria-invalid]="!!amountError()" aria-describedby="op-amount-msg" (input)="amountError.set(null)" />
+        </div>
+        @if (amountError(); as msg) {
+          <p class="kb-field__msg kb-field__msg--error" id="op-amount-msg" style="margin: 0;"><span class="kb-icon kb-icon--fill" aria-hidden="true">error</span>{{ msg }}</p>
+        } @else {
+          <p class="kb-field__help" id="op-amount-msg" style="margin: 0;">En pesos. Usa punto para miles y coma para centavos.</p>
+        }
+      </div>
+
+      <div class="kb-field">
+        <label class="kb-field__label" for="op-city">Ciudad donde haces la operación</label>
+        <div class="kb-input-box">
+          <select class="kb-input" id="op-city" formControlName="cityId">
+            <option [ngValue]="null" disabled>Selecciona…</option>
+            @for (c of cities(); track c.id) { <option [ngValue]="c.id">{{ c.name }}</option> }
+          </select>
+          <span class="kb-icon" aria-hidden="true">expand_more</span>
+        </div>
+        @if (!isDeposit && outOfCity()) {
+          <p class="kb-field__help" style="margin: 0;">Es distinta de la ciudad de origen de la cuenta ({{ selected()?.originCity }}). El retiro se permite.</p>
+        }
+      </div>
+
+      <div class="kb-field">
+        <label class="kb-field__label" for="op-desc">Descripción <span style="color: var(--text-muted); font-weight: 400;">(opcional)</span></label>
+        <div class="kb-input-box">
+          <input class="kb-input" id="op-desc" formControlName="description" maxlength="200" [placeholder]="isDeposit ? 'Ej.: Nómina' : 'Ej.: Cajero'" />
+        </div>
+      </div>
+
+      <div class="kb-auth__actions">
+        <a class="kb-btn kb-btn--tertiary" routerLink="/banca/inicio">Cancelar</a>
+        <button class="kb-btn kb-btn--primary" type="submit" [disabled]="!accounts().length">Continuar<span class="kb-icon" aria-hidden="true">chevron_right</span></button>
+      </div>
+    </form>
+  } @else {
+    <section class="kb-card" style="display: grid; gap: var(--space-6);" aria-label="Resumen de la operación">
+      <div>
+        <p class="kb-overline" style="margin: 0;">{{ isDeposit ? 'VAS A CONSIGNAR' : 'VAS A RETIRAR' }}</p>
+        <p class="kb-balance__amount" style="margin: var(--space-1) 0 0;">{{ parsedAmount() | cop }}</p>
+      </div>
+      <dl class="kb-summary">
+        <div><dt>Cuenta</dt><dd>{{ selected()?.type }} {{ selected()?.number }}</dd></div>
+        <div><dt>Ciudad</dt><dd>{{ cityName() }}</dd></div>
+        @if (form.controls.description.value.trim()) {
+          <div><dt>Descripción</dt><dd>{{ form.controls.description.value }}</dd></div>
+        }
+        <div class="is-total">
+          <dt>Saldo después</dt>
+          <dd>{{ (selected()?.balance ?? 0) + (isDeposit ? parsedAmount()! : -parsedAmount()!) | cop }}</dd>
+        </div>
+      </dl>
+      <div class="kb-auth__actions">
+        <button class="kb-btn kb-btn--tertiary" type="button" (click)="confirming.set(false)" [disabled]="busy()">Editar</button>
+        <button class="kb-btn kb-btn--primary" type="button" (click)="submit()" [disabled]="busy()" [class.is-loading]="busy()">
+          @if (busy()) { <span class="kb-icon" aria-hidden="true">progress_activity</span> Procesando… } @else { Confirmar {{ isDeposit ? 'consignación' : 'retiro' }} }
+        </button>
+      </div>
+    </section>
+  }
+</main>

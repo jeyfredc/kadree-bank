@@ -1,0 +1,86 @@
+<main class="kb-page">
+  <div>
+    @if (auth.isBanco()) {
+      <h1 class="kb-page__title">Cuentas</h1>
+      <p class="kb-page__lead">Consulta de todas las cuentas del banco. El rol Banco consulta pero no opera.</p>
+    } @else {
+      <h1 class="kb-page__title">Hola, {{ firstName() }}</h1>
+      <p class="kb-page__lead">Este es el resumen de tus productos.</p>
+    }
+  </div>
+
+  @if (error()) {
+    <kb-alert type="error" heading="No pudimos cargar tus cuentas" [message]="error()" />
+  }
+
+  @if (accounts(); as list) {
+    <section class="kb-balance" aria-labelledby="bal-title">
+      <div class="kb-balance__top">
+        <div>
+          <p class="kb-overline" id="bal-title" style="margin: 0;">{{ auth.isBanco() ? 'SALDO TOTAL DEL BANCO' : 'SALDO TOTAL' }}</p>
+          <p class="kb-balance__amount" [class.is-hidden]="hidden()" aria-live="polite">
+            @if (hidden()) { <span aria-label="Saldo oculto">••••••</span> } @else { {{ total() | cop }} }
+          </p>
+          <p class="kb-balance__note">{{ list.length }} {{ list.length === 1 ? 'cuenta' : 'cuentas' }} · pesos colombianos</p>
+        </div>
+        <button class="kb-icon-btn" type="button" (click)="toggleHidden()" [attr.aria-pressed]="hidden()"
+                [attr.aria-label]="hidden() ? 'Mostrar saldos' : 'Ocultar saldos'">
+          <span class="kb-icon kb-icon--md" aria-hidden="true">{{ hidden() ? 'visibility' : 'visibility_off' }}</span>
+        </button>
+      </div>
+    </section>
+
+    @if (!auth.isBanco()) {
+      <section aria-labelledby="quick-title">
+        <h2 class="kb-sr" id="quick-title">Accesos rápidos</h2>
+        <div class="kb-quick">
+          <a class="kb-tile" routerLink="/banca/consignar"><span class="kb-tile__icon"><span class="kb-icon" aria-hidden="true">south_west</span></span>Consignar</a>
+          <a class="kb-tile" routerLink="/banca/retirar"><span class="kb-tile__icon"><span class="kb-icon" aria-hidden="true">north_east</span></span>Retirar</a>
+          <a class="kb-tile" routerLink="/banca/extractos"><span class="kb-tile__icon"><span class="kb-icon" aria-hidden="true">description</span></span>Extractos</a>
+        </div>
+      </section>
+    }
+
+    <section aria-labelledby="prod-title" style="display: grid; gap: var(--space-4);">
+      <h2 class="kb-section-title" id="prod-title">{{ auth.isBanco() ? 'Todas las cuentas' : 'Tus productos' }}</h2>
+      <div class="kb-products">
+        @for (a of list; track a.number) {
+          <a class="kb-product" [routerLink]="['/banca/cuentas', a.number]" [attr.aria-label]="'Cuenta ' + a.type + ' ' + a.number">
+            <div class="kb-product__head">
+              <span class="kb-product__icon"><span class="kb-icon" aria-hidden="true">{{ a.type === 'Ahorros' ? 'savings' : 'account_balance' }}</span></span>
+              <div>
+                <p class="kb-product__name">Cuenta {{ a.type === 'Ahorros' ? 'de ahorros' : 'corriente' }}</p>
+                <p class="kb-product__number">{{ a.number }}</p>
+              </div>
+              <span class="kb-badge kb-badge--info">{{ a.originCity }}</span>
+            </div>
+            @if (auth.isBanco()) {
+              <p class="kb-card__meta">{{ a.customerName }} · {{ a.customerDocument }}</p>
+            }
+            <div>
+              <p class="kb-overline" style="margin: 0;">SALDO DISPONIBLE</p>
+              <p class="kb-product__amount">@if (hidden()) { •••••• } @else { {{ a.balance | cop }} }</p>
+            </div>
+          </a>
+        } @empty {
+          <div class="kb-empty"><span class="kb-icon kb-icon--md" aria-hidden="true">account_balance_wallet</span>No hay cuentas para mostrar.</div>
+        }
+      </div>
+    </section>
+
+    @if (!auth.isBanco() && list.length) {
+      @if (recent(); as movements) {
+        <kb-movement-list [movements]="movements" heading="Movimientos recientes" [showFilters]="false" emptyText="Aún no tienes movimientos.">
+          <div class="kb-movements__foot">
+            <a class="kb-link kb-link--standalone" [routerLink]="['/banca/cuentas', list[0].number]">Ver todos los movimientos</a>
+          </div>
+        </kb-movement-list>
+      }
+    }
+  } @else if (!error()) {
+    <div class="kb-balance" aria-busy="true" aria-label="Cargando">
+      <span class="kb-skeleton" style="width: 120px; height: 16px;"></span>
+      <span class="kb-skeleton" style="width: 260px; height: 44px;"></span>
+    </div>
+  }
+</main>

@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+.vs/
+src/
+tests/
+KadreeBank.UnitTests/
+KadreeBank.IntegrationTests/
+**/*.user
