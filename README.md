@@ -370,14 +370,3 @@ Para ver el error de saldo: ingrese como `ana.gomez`, elija `AH-1006` (saldo $75
 | «Demasiados intentos» al ingresar | Límite de 10 intentos por minuto por IP: espere un minuto |
 | «Acceso bloqueado» | Tres contraseñas erradas bloquean el usuario 15 minutos; se desbloquea solo |
 
----
-
-## 9. Pendientes para producción
-
-- Clave de idempotencia (`Idempotency-Key`) en consignaciones y retiros, para que un reintento de red no duplique la operación.
-- Segundo factor de autenticación (OTP por SMS o app) y recuperación de contraseña.
-- Rate limiting distribuido (Redis) si la API corre en varias instancias. El actual vive en la memoria de cada instancia.
-- Paginación por cursor en movimientos y extractos de cuentas con mucho volumen.
-- Réplica de lectura o vistas materializadas para los reportes a gran escala.
-- Actualizar a **.NET 10 (LTS)**: el soporte de .NET 9 termina en noviembre de 2026.
-- TLS en un balanceador delante, imagen de Nginx sin privilegios y cabeceras CSP estrictas.
