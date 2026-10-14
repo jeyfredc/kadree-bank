@@ -7,6 +7,6 @@
 .vs/
 *.user
 TestResults/
-# Notas locales de herramientas de IA (no forman parte del proyecto)
-CLAUDE.md
-.claude/
+# Configuración personal de Claude Code (lo compartido sí se versiona: CLAUDE.md y .claude/)
+CLAUDE.local.md
+.claude/settings.local.json

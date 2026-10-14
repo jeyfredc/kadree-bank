@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./**/.env)",
+      "Read(./backend/KadreeBank.Api/appsettings.Production.json)"
+    ],
+    "ask": [
+      "Bash(docker compose down -v)",
+      "Bash(docker compose down -v *)",
+      "Bash(git push *)"
+    ]
+  }
+}
